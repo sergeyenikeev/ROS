@@ -1,0 +1,15 @@
+build/
+install/
+log/
+.cache/
+.idea/
+.vscode/
+*.user
+*.suo
+*.swp
+*.pyc
+__pycache__/
+*.orig
+compile_commands.json
+coverage/
+test_results/
