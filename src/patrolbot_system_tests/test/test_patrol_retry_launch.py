@@ -12,11 +12,15 @@ from patrolbot_interfaces.srv import StartPatrol
 
 
 def generate_test_description():
+    # Сценарий проверяет, что после первой ошибки mission manager переходит
+    # в RETRY_WAIT, повторяет goal и затем успешно заканчивает миссию.
     system_tests_share = get_package_share_directory('patrolbot_system_tests')
     mission_file = os.path.join(system_tests_share, 'test', 'patrol_retry.yaml')
 
     return launch.LaunchDescription([
         Node(
+            # Первая попытка завершается abort, вторая тем же mock-сервером
+            # завершается успехом.
             package='patrolbot_system_tests',
             executable='mock_nav2_action_server',
             name='mock_nav2_action_server',
@@ -63,6 +67,8 @@ class TestPatrolRetryLaunch(unittest.TestCase):
         self.assertTrue(future.result().accepted)
 
         deadline = time.time() + 15.0
+        # Фиксируем сам факт входа в RETRY_WAIT, иначе тест проверял бы только
+        # финальный успех, но не саму механику повторной попытки.
         seen_retry_wait = False
         while time.time() < deadline:
             rclpy.spin_once(self.node, timeout_sec=0.1)

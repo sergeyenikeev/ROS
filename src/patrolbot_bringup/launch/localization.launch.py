@@ -9,6 +9,9 @@ import os
 
 
 def generate_launch_description():
+    # Профиль локализации поднимает базовую платформу, загрузку карты и AMCL.
+    # Он отделён от навигации, чтобы можно было отдельно проверять только
+    # качество map -> odom и корректность начальной позы.
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_mock_hardware = LaunchConfiguration('use_mock_hardware')
     map_yaml = LaunchConfiguration('map')
@@ -25,6 +28,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('use_mock_hardware', default_value='true'),
+        # По умолчанию используется тестовая карта пакета navigation, но в
+        # реальной эксплуатации сюда передаётся сохранённая карта объекта.
         DeclareLaunchArgument('map', default_value=default_map),
         DeclareLaunchArgument('log_level', default_value='info'),
         IncludeLaunchDescription(
@@ -44,6 +49,8 @@ def generate_launch_description():
             }.items(),
         ),
         Node(
+            # map_server отвечает только за загрузку готовой карты и никак не
+            # занимается локализацией или навигацией сам по себе.
             package='nav2_map_server',
             executable='map_server',
             name='map_server',
@@ -52,6 +59,8 @@ def generate_launch_description():
             parameters=[{'yaml_filename': map_yaml, 'use_sim_time': use_sim_time}],
         ),
         Node(
+            # AMCL выбран как основной локализатор на сохранённой карте для
+            # практического indoor-сценария PatrolBot.
             package='nav2_amcl',
             executable='amcl',
             name='amcl',
@@ -60,6 +69,8 @@ def generate_launch_description():
             parameters=[amcl_config, {'use_sim_time': use_sim_time}],
         ),
         Node(
+            # Lifecycle manager переводит map_server и AMCL в активное состояние
+            # без ручного управления их жизненным циклом.
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
             name='lifecycle_manager_localization',

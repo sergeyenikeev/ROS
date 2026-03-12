@@ -537,9 +537,14 @@
 - `patrolbot_utils/src/logging_utils.cpp`
 - `patrolbot_utils/src/diagnostic_helper.cpp`
 - `patrolbot_utils/src/mock_scan_publisher.cpp`
+- `patrolbot_bringup/launch/*.launch.py`
+- `patrolbot_description/launch/robot_state_publisher.launch.py`
+- `patrolbot_description/urdf/patrolbot.urdf.xacro`
+- `patrolbot_system_tests/src/mock_nav2_action_server.cpp`
+- ключевые launch-тесты из `patrolbot_system_tests/test`
 
 Следующим этапом логично расширять комментарии на:
 
-- launch-файлы `patrolbot_bringup`;
-- URDF/Xacro в `patrolbot_description`;
-- тестовые файлы и конфиги.
+- оставшиеся тестовые файлы и тестовые YAML-миссии;
+- конфиги `Nav2`, `AMCL`, `slam_toolbox` и base-параметры;
+- дополнительные документы и операторские сценарии, если потребуется ещё более подробная поясняющая документация.

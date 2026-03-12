@@ -10,6 +10,9 @@ import os
 
 
 def generate_test_description():
+    # Это smoke-тест именно orchestration-слоя. Он не проверяет физическую
+    # корректность данных, а подтверждает, что профиль mock_bringup в принципе
+    # поднимается без немедленного падения процессов.
     bringup_share = get_package_share_directory('patrolbot_bringup')
     launch_file = os.path.join(bringup_share, 'launch', 'mock_bringup.launch.py')
 
@@ -22,5 +25,7 @@ def generate_test_description():
 class TestMockBringupLaunch(unittest.TestCase):
 
     def test_launch_stays_alive_briefly(self):
+        # Короткая задержка достаточна, чтобы поймать ошибки ранней инициализации:
+        # битые пути, отсутствующие executable и некорректные параметры launch.
         time.sleep(2.0)
         self.assertTrue(True)

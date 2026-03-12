@@ -8,6 +8,8 @@ import os
 
 
 def generate_launch_description():
+    # Этот launch специально вынесен в отдельный пакет и отдельный файл, чтобы
+    # описание робота подключалось одинаково во всех профилях bringup.
     package_share = get_package_share_directory('patrolbot_description')
     default_xacro = os.path.join(package_share, 'urdf', 'patrolbot.urdf.xacro')
 
@@ -15,6 +17,8 @@ def generate_launch_description():
     publish_frequency = LaunchConfiguration('publish_frequency')
     xacro_file = LaunchConfiguration('xacro_file')
 
+    # robot_description генерируется из Xacro на лету, поэтому изменения в
+    # модели робота сразу подхватываются всеми launch-профилями.
     robot_description = ParameterValue(
         Command(['xacro ', xacro_file]),
         value_type=str,
@@ -37,6 +41,8 @@ def generate_launch_description():
             description='Абсолютный путь до файла Xacro.',
         ),
         Node(
+            # robot_state_publisher публикует кинематическую модель робота и
+            # дерево трансформаций, зависящее от joint_states.
             package='robot_state_publisher',
             executable='robot_state_publisher',
             name='robot_state_publisher',

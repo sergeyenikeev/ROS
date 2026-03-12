@@ -10,6 +10,8 @@ import os
 
 
 def generate_test_description():
+    # Этот тест проверяет только способность профиля localization запуститься
+    # с тестовой картой и mock-источниками.
     bringup_share = get_package_share_directory('patrolbot_bringup')
     launch_file = os.path.join(bringup_share, 'launch', 'localization.launch.py')
 
@@ -25,5 +27,6 @@ def generate_test_description():
 class TestLocalizationLaunch(unittest.TestCase):
 
     def test_launch_stays_alive_briefly(self):
+        # Небольшая пауза даёт AMCL и map_server время на инициализацию.
         time.sleep(2.0)
         self.assertTrue(True)

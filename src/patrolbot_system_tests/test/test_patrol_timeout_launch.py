@@ -12,11 +12,15 @@ from patrolbot_interfaces.srv import StartPatrol
 
 
 def generate_test_description():
+    # Сценарий таймаута проверяет, что зависшая цель не остаётся бесконечно
+    # активной и переводит mission manager в состояние FAILED.
     system_tests_share = get_package_share_directory('patrolbot_system_tests')
     mission_file = os.path.join(system_tests_share, 'test', 'patrol_timeout.yaml')
 
     return launch.LaunchDescription([
         Node(
+            # Mock Nav2 здесь намеренно не завершает goal, чтобы mission manager
+            # сработал по собственному таймауту waypoint.
             package='patrolbot_system_tests',
             executable='mock_nav2_action_server',
             name='mock_nav2_action_server',
@@ -62,6 +66,8 @@ class TestPatrolTimeoutLaunch(unittest.TestCase):
         rclpy.spin_until_future_complete(self.node, future, timeout_sec=5.0)
         self.assertTrue(future.result().accepted)
 
+        # Ожидаем FAILED и проверяем, что во внешнем статусе осталась явная
+        # причина отказа, связанная именно с таймаутом.
         deadline = time.time() + 15.0
         while time.time() < deadline:
             rclpy.spin_once(self.node, timeout_sec=0.1)

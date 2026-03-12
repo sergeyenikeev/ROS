@@ -10,6 +10,8 @@ import os
 
 
 def generate_test_description():
+    # Проверяется, что полный профиль navigation может стартовать поверх
+    # mock-аппаратуры без немедленного краша launch-цепочки.
     bringup_share = get_package_share_directory('patrolbot_bringup')
     launch_file = os.path.join(bringup_share, 'launch', 'navigation.launch.py')
 
@@ -25,5 +27,7 @@ def generate_test_description():
 class TestNavigationLaunch(unittest.TestCase):
 
     def test_launch_stays_alive_briefly(self):
+        # Smoke-тест сознательно короткий: его задача быстро ловить проблемы
+        # orchestration, а не прогонять полноценную навигацию.
         time.sleep(2.0)
         self.assertTrue(True)

@@ -9,6 +9,9 @@ import os
 
 
 def generate_launch_description():
+    # Launch-профиль SLAM выбирает только источник базовой платформы:
+    # mock-окружение или реальное железо. Сама логика картографирования поверх
+    # этого источника остаётся одинаковой.
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_mock_hardware = LaunchConfiguration('use_mock_hardware')
     log_level = LaunchConfiguration('log_level')
@@ -25,6 +28,8 @@ def generate_launch_description():
         DeclareLaunchArgument('log_level', default_value='info'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(mock_launch),
+            # Mock-режим удобен для smoke-проверки launch и для ранней настройки
+            # SLAM-пайплайна без реального робота.
             condition=IfCondition(use_mock_hardware),
             launch_arguments={
                 'use_sim_time': use_sim_time,
@@ -33,6 +38,7 @@ def generate_launch_description():
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(hardware_launch),
+            # В аппаратном режиме берутся реальные источники одометрии и датчиков.
             condition=UnlessCondition(use_mock_hardware),
             launch_arguments={
                 'use_sim_time': use_sim_time,
@@ -40,6 +46,8 @@ def generate_launch_description():
             }.items(),
         ),
         Node(
+            # Используется асинхронный режим slam_toolbox как практичный вариант
+            # для живого картографирования в помещении на PatrolBot.
             package='slam_toolbox',
             executable='async_slam_toolbox_node',
             name='slam_toolbox',

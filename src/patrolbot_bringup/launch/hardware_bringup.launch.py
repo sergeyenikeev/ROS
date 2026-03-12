@@ -8,6 +8,9 @@ import os
 
 
 def generate_launch_description():
+    # Профиль для реального робота намеренно остаётся компактным: он поднимает
+    # только описание робота и базовую платформу, а LiDAR ожидается как внешний
+    # ROS 2 драйвер, публикующий /scan.
     use_sim_time = LaunchConfiguration('use_sim_time')
     log_level = LaunchConfiguration('log_level')
 
@@ -21,9 +24,13 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(
                 os.path.join(description_share, 'launch', 'robot_state_publisher.launch.py')
             ),
+            # Описание робота одинаково важно и для mock, и для hardware режима,
+            # поэтому reuse делается через тот же общий launch.
             launch_arguments={'use_sim_time': use_sim_time}.items(),
         ),
         Node(
+            # Конфигурация базы под железо вынесена в отдельный YAML, чтобы
+            # стендовые и аппаратные параметры не смешивались.
             package='patrolbot_base',
             executable='patrolbot_base_node',
             name='patrolbot_base',

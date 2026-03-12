@@ -7,6 +7,8 @@ import os
 
 
 def generate_launch_description():
+    # Навигационный профиль строится поверх профиля локализации. Это позволяет
+    # не дублировать map_server, AMCL и выбор mock/hardware окружения.
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_mock_hardware = LaunchConfiguration('use_mock_hardware')
     map_yaml = LaunchConfiguration('map')
@@ -22,6 +24,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('use_mock_hardware', default_value='true'),
+        # Карта пробрасывается вниз в localization launch, чтобы вся цепочка
+        # использовала один и тот же YAML без рассинхронизации.
         DeclareLaunchArgument(
             'map',
             default_value=os.path.join(navigation_share, 'maps', 'test_map.yaml'),
@@ -29,6 +33,8 @@ def generate_launch_description():
         DeclareLaunchArgument('log_level', default_value='info'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(localization_launch),
+            # Сначала всегда поднимается локализация, иначе Nav2 не получит
+            # стабильный transform map -> odom.
             launch_arguments={
                 'use_sim_time': use_sim_time,
                 'use_mock_hardware': use_mock_hardware,
@@ -38,6 +44,8 @@ def generate_launch_description():
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(nav2_launch),
+            # Штатный launch Nav2 переиспользуется как внешний компонент, а
+            # параметры PatrolBot подаются через собственный params_file.
             launch_arguments={
                 'use_sim_time': use_sim_time,
                 'params_file': os.path.join(navigation_share, 'config', 'nav2_params.yaml'),

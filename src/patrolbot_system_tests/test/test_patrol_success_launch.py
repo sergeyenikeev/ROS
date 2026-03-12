@@ -12,11 +12,14 @@ from patrolbot_interfaces.srv import StartPatrol
 
 
 def generate_test_description():
+    # Сценарий проверяет "золотой путь": все цели проходят успешно, а миссия
+    # должна завершиться в состоянии COMPLETED без повторов.
     system_tests_share = get_package_share_directory('patrolbot_system_tests')
     mission_file = os.path.join(system_tests_share, 'test', 'patrol_success.yaml')
 
     return launch.LaunchDescription([
         Node(
+            # Mock Nav2 в этом тесте всегда возвращает успешный результат.
             package='patrolbot_system_tests',
             executable='mock_nav2_action_server',
             name='mock_nav2_action_server',
@@ -24,6 +27,8 @@ def generate_test_description():
             parameters=[{'result_sequence': 'succeed'}],
         ),
         Node(
+            # Mission manager поднимается отдельно, чтобы тест был сфокусирован
+            # именно на логике патруля, а не на полном navigation bringup.
             package='patrolbot_mission_manager',
             executable='patrolbot_mission_manager_node',
             name='patrolbot_mission_manager',
@@ -51,6 +56,8 @@ class TestPatrolSuccessLaunch(unittest.TestCase):
         rclpy.shutdown()
 
     def test_patrol_completes(self):
+        # Статусы читаются из /patrol/status, потому что это внешний контракт
+        # mission manager, по которому за ним наблюдают и оператор, и тесты.
         statuses = []
         self.subscription = self.node.create_subscription(PatrolStatus, '/patrol/status', statuses.append, 10)
         client = self.node.create_client(StartPatrol, '/patrol/start')
@@ -62,6 +69,8 @@ class TestPatrolSuccessLaunch(unittest.TestCase):
         rclpy.spin_until_future_complete(self.node, future, timeout_sec=5.0)
         self.assertTrue(future.result().accepted)
 
+        # Ожидаем успешного завершения и одновременно проверяем, что счётчик
+        # завершённых waypoint совпадает с содержимым тестовой миссии.
         deadline = time.time() + 15.0
         while time.time() < deadline:
             rclpy.spin_once(self.node, timeout_sec=0.1)

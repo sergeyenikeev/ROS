@@ -8,6 +8,9 @@ import os
 
 
 def generate_launch_description():
+    # Полный профиль PatrolBot: локализация, Nav2 и прикладная логика маршрута.
+    # Такой запуск удобен для оператора, которому нужен один вход в систему,
+    # а не ручная сборка нескольких отдельных launch-файлов.
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_mock_hardware = LaunchConfiguration('use_mock_hardware')
     map_yaml = LaunchConfiguration('map')
@@ -24,14 +27,20 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('use_mock_hardware', default_value='true'),
+        # По умолчанию используется тестовая карта, но в реальной эксплуатации
+        # сюда обычно передаётся путь к сохранённой карте объекта.
         DeclareLaunchArgument(
             'map',
             default_value=os.path.join(navigation_share, 'maps', 'test_map.yaml'),
         ),
+        # YAML-миссия пробрасывается как параметр, чтобы оператор мог быстро
+        # переключать сценарии патрулирования без правки launch-файла.
         DeclareLaunchArgument('mission_file', default_value=default_mission),
         DeclareLaunchArgument('log_level', default_value='info'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(navigation_launch),
+            # Сначала поднимается полный стек навигации, а уже затем mission manager,
+            # иначе он может стартовать раньше, чем появится /navigate_to_pose.
             launch_arguments={
                 'use_sim_time': use_sim_time,
                 'use_mock_hardware': use_mock_hardware,
@@ -40,6 +49,9 @@ def generate_launch_description():
             }.items(),
         ),
         Node(
+            # Mission manager получает только минимум параметров через launch:
+            # путь к маршруту и режим времени. Всё остальное берётся из своих
+            # внутренних параметров и конфигурации.
             package='patrolbot_mission_manager',
             executable='patrolbot_mission_manager_node',
             name='patrolbot_mission_manager',
