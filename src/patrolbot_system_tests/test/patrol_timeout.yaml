@@ -1,0 +1,16 @@
+mission:
+  name: patrol_timeout
+  frame_id: map
+  autostart: false
+  loop_forever: false
+  continue_on_error: false
+  default_timeout_sec: 1.0
+  default_retries: 0
+  retry_backoff_sec: 0.5
+  waypoints:
+    - name: wp_timeout
+      x: 0.0
+      y: 0.0
+      yaw_deg: 0.0
+      timeout_sec: 1.0
+      retries: 0

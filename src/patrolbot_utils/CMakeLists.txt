@@ -61,4 +61,30 @@ ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(diagnostic_msgs geometry_msgs rclcpp sensor_msgs yaml_cpp_vendor)
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(test_parameter_validation
+    test/test_parameter_validation.cpp
+  )
+  target_link_libraries(test_parameter_validation ${PROJECT_NAME})
+  ament_target_dependencies(test_parameter_validation
+    diagnostic_msgs
+    geometry_msgs
+    rclcpp
+    sensor_msgs
+  )
+
+  ament_add_gtest(test_route_loader
+    test/test_route_loader.cpp
+  )
+  target_link_libraries(test_route_loader ${PROJECT_NAME})
+  ament_target_dependencies(test_route_loader
+    diagnostic_msgs
+    geometry_msgs
+    rclcpp
+    sensor_msgs
+  )
+endif()
+
 ament_package()

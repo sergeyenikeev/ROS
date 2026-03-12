@@ -8,4 +8,6 @@
 - [СДЕЛАНО] Подготовлены конфиги `slam_toolbox`, `AMCL`, `Nav2`, параметры costmap и тестовая карта.
 - [СДЕЛАНО] Реализованы интерфейсы `PatrolStatus`, `StartPatrol`, `StopPatrol`.
 - [СДЕЛАНО] Реализован `mission_manager` с YAML-маршрутами, отправкой целей в `Nav2`, повторами, таймаутами и публикацией статуса миссии.
-- [ПЛАНИРУЕТСЯ] Unit и integration тесты для state machine, launch и взаимодействия с mock Nav2.
+- [СДЕЛАНО] Добавлены unit-тесты для валидации параметров, загрузчика маршрутов, интегратора одометрии и state machine.
+- [СДЕЛАНО] Добавлены launch/integration тесты для `mock_bringup`, `slam`, `localization`, `navigation` и сценариев patrol через mock Nav2 action server.
+- [ПЛАНИРУЕТСЯ] Скрипты эксплуатации, подробные runbook и финальная эксплуатационная документация.

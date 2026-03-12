@@ -88,4 +88,25 @@ ament_export_dependencies(
   tf2_geometry_msgs
 )
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(test_mission_state_machine
+    test/test_mission_state_machine.cpp
+  )
+  target_link_libraries(test_mission_state_machine ${PROJECT_NAME}_lib)
+  ament_target_dependencies(test_mission_state_machine
+    ament_index_cpp
+    geometry_msgs
+    nav2_msgs
+    patrolbot_interfaces
+    patrolbot_utils
+    rclcpp
+    rclcpp_action
+    std_msgs
+    tf2
+    tf2_geometry_msgs
+  )
+endif()
+
 ament_package()

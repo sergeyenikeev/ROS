@@ -90,4 +90,25 @@ ament_export_dependencies(
   tf2_ros
 )
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(test_odometry_integrator
+    test/test_odometry_integrator.cpp
+  )
+  target_link_libraries(test_odometry_integrator ${PROJECT_NAME}_lib)
+  ament_target_dependencies(test_odometry_integrator
+    diagnostic_msgs
+    geometry_msgs
+    nav_msgs
+    patrolbot_utils
+    rclcpp
+    sensor_msgs
+    std_msgs
+    tf2
+    tf2_geometry_msgs
+    tf2_ros
+  )
+endif()
+
 ament_package()
