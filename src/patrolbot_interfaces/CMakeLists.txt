@@ -6,6 +6,9 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/PatrolStatus.msg"
+  "srv/StartPatrol.srv"
+  "srv/StopPatrol.srv"
 )
 
 ament_export_dependencies(rosidl_default_runtime)

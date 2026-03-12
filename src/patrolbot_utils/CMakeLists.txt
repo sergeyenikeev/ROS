@@ -6,11 +6,13 @@ find_package(diagnostic_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 add_library(${PROJECT_NAME}
   src/diagnostic_helper.cpp
   src/logging_utils.cpp
   src/parameter_validation.cpp
+  src/route_loader.cpp
 )
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
@@ -25,6 +27,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rclcpp
   sensor_msgs
 )
+target_link_libraries(${PROJECT_NAME} yaml-cpp)
 
 add_executable(mock_scan_publisher
   src/mock_scan_publisher.cpp
@@ -56,6 +59,6 @@ install(DIRECTORY config
 
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
-ament_export_dependencies(diagnostic_msgs geometry_msgs rclcpp sensor_msgs)
+ament_export_dependencies(diagnostic_msgs geometry_msgs rclcpp sensor_msgs yaml_cpp_vendor)
 
 ament_package()

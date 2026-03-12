@@ -1,0 +1,28 @@
+mission:
+  name: office_patrol
+  frame_id: map
+  autostart: false
+  loop_forever: true
+  continue_on_error: false
+  default_timeout_sec: 90.0
+  default_retries: 2
+  retry_backoff_sec: 5.0
+  waypoints:
+    - name: entrance
+      x: 0.0
+      y: 0.0
+      yaw_deg: 0.0
+      timeout_sec: 60.0
+      retries: 1
+    - name: corridor
+      x: 1.2
+      y: 0.0
+      yaw_deg: 0.0
+      timeout_sec: 75.0
+      retries: 2
+    - name: storage
+      x: 1.2
+      y: 1.0
+      yaw_deg: 90.0
+      timeout_sec: 75.0
+      retries: 2
