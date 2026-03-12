@@ -1,99 +1,231 @@
 # Архитектура PatrolBot
 
-## Верхний уровень
+## 1. Общая схема
 
-PatrolBot строится как набор ROS 2 пакетов, разделённых по ответственности:
+PatrolBot построен как набор ROS 2 пакетов с явным разделением ответственности:
 
-- `patrolbot_description` хранит URDF/Xacro и описание фреймов.
+- `patrolbot_description` задаёт геометрию робота и статические фреймы.
+- `patrolbot_base` отвечает за движение, одометрию, `joint_states` и диагностику.
+- `patrolbot_utils` предоставляет общие утилиты, загрузчик маршрутов и mock-источники данных.
+- `patrolbot_slam` инкапсулирует конфигурацию `slam_toolbox`.
+- `patrolbot_navigation` инкапсулирует карту, `AMCL` и `Nav2`.
+- `patrolbot_mission_manager` реализует прикладную state machine патруля.
 - `patrolbot_bringup` собирает подсистемы в профили запуска.
-- `patrolbot_base` будет отвечать за движение, одометрию и диагностику.
-- `patrolbot_base` уже содержит тестируемый интегратор одометрии, аппаратную абстракцию драйвера моторов и mock-реализацию.
-- `patrolbot_slam` и `patrolbot_navigation` инкапсулируют конфигурацию картографирования и навигации.
-- `patrolbot_mission_manager` будет реализовывать прикладную логику патрулирования.
-- `patrolbot_utils` и `patrolbot_interfaces` содержат общие утилиты, mock-датчики и интерфейсы.
+- `patrolbot_system_tests` содержит тестовую оркестрацию и mock Nav2 action server.
 
-## TF-дерево
+Такое разбиение выбрано, чтобы:
 
-В проекте зафиксирована следующая цепочка координатных фреймов:
+- отделить железо от прикладной логики;
+- упростить тестирование без Raspberry Pi;
+- минимизировать связность между SLAM, локализацией и патрулём;
+- позволить запускать subsystem-by-subsystem, а не только весь стек целиком.
 
-- `map` -> глобальная карта помещения;
-- `odom` -> локальная одометрическая система координат;
-- `base_footprint` -> проекция базы робота на плоскость пола;
-- `base_link` -> основная система координат корпуса;
-- `laser_frame` -> система координат 2D LiDAR.
+## 2. Ноды
 
-Такое разделение выбрано по практическим причинам:
+### `patrolbot_base`
 
-- `map -> odom` будет публиковаться локализатором;
-- `odom -> base_footprint` будет публиковаться базовой платформой;
-- `base_footprint -> base_link -> laser_frame` задаются статически через описание робота.
+Пакет запускает узел `patrolbot_base`:
 
-## Профили запуска
+- подписывается на `/cmd_vel`;
+- ограничивает линейную и угловую скорости;
+- включает watchdog потери команд;
+- переводит `Twist` в скорости колёс;
+- работает через интерфейс `MotorDriver`;
+- публикует `/odom`;
+- публикует `/joint_states`;
+- публикует `/diagnostics`;
+- опционально публикует TF `odom -> base_footprint`.
 
-В `patrolbot_bringup` уже зарезервированы основные сценарии:
+### `robot_state_publisher`
 
-- `mock_bringup.launch.py`
-- `hardware_bringup.launch.py`
-- `slam.launch.py`
+Запускается из `patrolbot_description` и публикует:
+
+- `base_footprint -> base_link`
+- `base_link -> left_wheel_link`
+- `base_link -> right_wheel_link`
+- `base_link -> laser_frame`
+
+### `mock_scan_publisher`
+
+Запускается в `mock` профиле из `patrolbot_utils`:
+
+- публикует синтетический `sensor_msgs/msg/LaserScan` в `/scan`;
+- нужен для smoke-тестов и отладки без реального LiDAR.
+
+### `slam_toolbox`
+
+Запускается в профиле `slam`:
+
+- подписывается на `/scan` и TF;
+- строит карту;
+- публикует `map -> odom`.
+
+### `map_server` и `amcl`
+
+Запускаются в профиле `localization`:
+
+- `map_server` загружает сохранённую карту;
+- `AMCL` локализует робота на карте;
+- публикуется TF `map -> odom`.
+
+### Узлы `Nav2`
+
+Запускаются в профиле `navigation`:
+
+- `planner_server`
+- `controller_server`
+- `behavior_server`
+- `bt_navigator`
+- `waypoint_follower`
+- `velocity_smoother`
+
+### `patrolbot_mission_manager`
+
+Ключевая прикладная нода:
+
+- загружает YAML-миссию;
+- валидирует маршрут;
+- ждёт доступность action `/navigate_to_pose`;
+- отправляет waypoint-ы по одному;
+- отслеживает feedback и результат;
+- обрабатывает таймаут, повтор и остановку;
+- публикует `/patrol/status`;
+- обслуживает `/patrol/start` и `/patrol/stop`.
+
+## 3. Топики
+
+Основные топики проекта:
+
+- `/cmd_vel` - входная команда движения.
+- `/odom` - одометрия базовой платформы.
+- `/joint_states` - состояние колёс.
+- `/diagnostics` - диагностика узлов.
+- `/scan` - данные 2D LiDAR.
+- `/map` - карта помещения.
+- `/tf` и `/tf_static` - дерево TF.
+- `/patrol/status` - текущий статус миссии патрулирования.
+
+## 4. Сервисы
+
+- `/patrol/start` (`patrolbot_interfaces/srv/StartPatrol`)
+- `/patrol/stop` (`patrolbot_interfaces/srv/StopPatrol`)
+
+Назначение:
+
+- `start` запускает миссию по YAML-маршруту;
+- `stop` останавливает текущий патруль;
+- `restart_if_running=true` инициирует отмену текущей цели и перезапуск миссии.
+
+## 5. Actions
+
+Используемый action:
+
+- `/navigate_to_pose` (`nav2_msgs/action/NavigateToPose`)
+
+Почему выбран именно он:
+
+- позволяет контролировать каждую точку отдельно;
+- удобно добавлять per-waypoint таймауты;
+- проще реализовать повторы и детальные логи;
+- проще тестировать через mock action server.
+
+## 6. TF-дерево
+
+Зафиксированная цепочка:
+
+- `map -> odom -> base_footprint -> base_link -> laser_frame`
+
+Распределение ответственности:
+
+- `map -> odom` публикует `slam_toolbox` или `AMCL`;
+- `odom -> base_footprint` публикует `patrolbot_base`;
+- остальная часть цепочки задаётся URDF/Xacro и `robot_state_publisher`.
+
+## 7. State machine миссии
+
+Состояния:
+
+- `IDLE`
+- `VALIDATING_ROUTE`
+- `WAITING_FOR_NAV2`
+- `NAVIGATING`
+- `RETRY_WAIT`
+- `STOPPING`
+- `COMPLETED`
+- `FAILED`
+
+Типовой сценарий:
+
+1. оператор вызывает `/patrol/start`;
+2. нода переходит в `VALIDATING_ROUTE`;
+3. маршрут загружается и проверяется;
+4. при отсутствии Nav2 нода переходит в `WAITING_FOR_NAV2`;
+5. после появления action server начинается `NAVIGATING`;
+6. при ошибке цели возможен `RETRY_WAIT`;
+7. после последней точки миссия переходит в `COMPLETED`;
+8. при неустранимой ошибке миссия переходит в `FAILED`.
+
+## 8. Профили запуска
+
+### `mock_bringup.launch.py`
+
+- `robot_state_publisher`
+- `patrolbot_base` в режиме `mock`
+- `mock_scan_publisher`
+
+### `hardware_bringup.launch.py`
+
+- `robot_state_publisher`
+- `patrolbot_base` в режиме `serial`
+- внешний LiDAR ожидается отдельно
+
+### `slam.launch.py`
+
+- `mock_bringup` или `hardware_bringup`
+- `slam_toolbox`
+
+### `localization.launch.py`
+
+- `mock_bringup` или `hardware_bringup`
+- `map_server`
+- `AMCL`
+- `lifecycle_manager`
+
+### `navigation.launch.py`
+
 - `localization.launch.py`
+- узлы `Nav2`
+
+### `patrol.launch.py`
+
 - `navigation.launch.py`
-- `patrol.launch.py`
+- `patrolbot_mission_manager`
 
-Такой набор launch-файлов выбран, чтобы:
+## 9. Основные файлы конфигурации
 
-- отдельно тестировать базовую платформу без навигации;
-- разделить картографирование и локализацию;
-- переиспользовать общие части в mock и hardware режимах;
-- запускать патрулирование поверх готовой навигационной подсистемы.
+- `src/patrolbot_base/config/base_mock.yaml`
+- `src/patrolbot_base/config/base_hardware.yaml`
+- `src/patrolbot_slam/config/slam_toolbox_async.yaml`
+- `src/patrolbot_navigation/config/amcl.yaml`
+- `src/patrolbot_navigation/config/nav2_params.yaml`
+- `src/patrolbot_mission_manager/config/patrol_route.yaml`
 
-## Базовая платформа
+## 10. Почему именно такой дизайн
 
-В `patrolbot_base` принята следующая схема:
+### Собственный драйвер базы вместо `ros2_control`
 
-- узел принимает `/cmd_vel`;
-- линейная и угловая скорости ограничиваются параметрами безопасности;
-- при потере команд срабатывает watchdog и робот останавливается;
-- команды переводятся в скорости левого и правого колеса;
-- драйвер возвращает оценку текущих скоростей колёс;
-- интегратор одометрии вычисляет `x`, `y`, `yaw`, `linear_velocity`, `angular_velocity`;
-- результаты публикуются в `/odom`, `joint_states`, `diagnostics`.
+- быстрее довести v1 до работающего прототипа;
+- проще тестировать без контроллерного стека;
+- проще отделить бизнес-логику odometry/diagnostics от конкретного оборудования.
 
-Почему выбран собственный драйверный слой, а не `ros2_control`:
+### `AMCL` вместо режима локализации `slam_toolbox`
 
-- проще быстро довести v1 до рабочего прототипа без жёсткой привязки к конкретной электронике;
-- легче покрыть бизнес-логику и одометрию unit-тестами;
-- mock-режим можно запускать без железа и без контроллерного стека.
+- более привычный и предсказуемый эксплуатационный режим;
+- легче разделить картографирование и боевую навигацию;
+- проще поддерживать и диагностировать.
 
-Для следующего этапа в документации будет явно сохранена возможность миграции на `ros2_control`.
+### Выделенный `mission_manager`
 
-## SLAM и навигация
-
-В качестве практического стека приняты:
-
-- `slam_toolbox` в асинхронном режиме для построения карты;
-- `AMCL` для локализации на сохранённой карте;
-- `Nav2` как основной навигационный стек;
-- `SmacPlanner2D` как глобальный планировщик;
-- `RegulatedPurePursuitController` как локальный контроллер.
-
-Почему выбран `AMCL`, а не режим локализации `slam_toolbox`:
-
-- для уже сохранённой карты `AMCL` остаётся более стандартным и предсказуемым решением;
-- проще искать примеры конфигурации и типовые неисправности;
-- легче отделить режим картографирования от штатной эксплуатации робота.
-
-## Прикладная логика патрулирования
-
-`patrolbot_mission_manager` работает как отдельный orchestration-слой поверх `Nav2`:
-
-- маршрут хранится в YAML-файле;
-- каждая точка отправляется через action `NavigateToPose`;
-- state machine управляет повторами, таймаутами и остановкой миссии;
-- текущий статус публикуется в `/patrol/status`;
-- операторские команды подаются через сервисы `/patrol/start` и `/patrol/stop`.
-
-Почему выбран именно последовательный `NavigateToPose`, а не `FollowWaypoints`:
-
-- проще детально логировать прохождение каждой точки;
-- легче управлять таймаутом и числом повторов на уровне waypoint;
-- проще покрывать state machine unit-тестами и интеграционными тестами с mock action server.
+- `Nav2` отвечает только за навигацию, а не за бизнес-логику обхода;
+- таймауты, повторы и состояние миссии лежат в отдельном понятном модуле;
+- прикладной код можно тестировать без настоящего робота.
