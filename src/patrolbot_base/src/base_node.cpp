@@ -30,6 +30,9 @@ constexpr char kRightWheelJointName[] = "right_wheel_joint";
 
 }  // namespace
 
+// Узел базы отвечает за нижний уровень мобильной платформы: принимает cmd_vel,
+// переводит их в команды колёсам, читает состояние драйвера, считает одометрию
+// и публикует наружу odom, joint_states и диагностику.
 BaseNode::BaseNode()
 : Node("patrolbot_base")
 {
@@ -37,9 +40,13 @@ BaseNode::BaseNode()
   ValidateParameters();
   CreateDriver();
 
+  // Интегратор хранится отдельно от ROS 2 инфраструктуры, чтобы его можно было
+  // полноценно тестировать как чистый математический компонент.
   odometry_integrator_ = std::make_unique<OdometryIntegrator>(
     parameters_.wheel_radius, parameters_.wheel_base);
 
+  // Подписка на /cmd_vel и периодический control loop разделены: это позволяет
+  // принимать команды асинхронно, а применять их с фиксированной частотой.
   odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/odom", 20);
   joint_state_publisher_ = create_publisher<sensor_msgs::msg::JointState>("/joint_states", 20);
   diagnostics_publisher_ =
@@ -50,6 +57,8 @@ BaseNode::BaseNode()
     std::bind(&BaseNode::CmdVelCallback, this, std::placeholders::_1));
 
   if (parameters_.publish_tf) {
+    // Публикация TF делается опциональной, чтобы узел можно было встроить в
+    // стенды, где transform odom -> base уже выдаёт другой компонент.
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
   }
 
@@ -70,6 +79,8 @@ BaseNode::BaseNode()
 
 BaseNode::~BaseNode()
 {
+  // Даже при исключениях и штатном завершении драйвер должен получить нулевую
+  // команду, поэтому остановка вынесена в деструктор.
   if (motor_driver_ != nullptr) {
     motor_driver_->Stop();
   }
@@ -82,6 +93,8 @@ BaseNode::~BaseNode()
 
 void BaseNode::LoadParameters()
 {
+  // Все параметры читаются централизованно, чтобы диагностика конфигурации и
+  // unit-тесты работали с одной и той же структурой BaseParameters.
   parameters_.wheel_radius = declare_parameter<double>("wheel_radius", parameters_.wheel_radius);
   parameters_.wheel_base = declare_parameter<double>("wheel_base", parameters_.wheel_base);
   parameters_.odom_frame = declare_parameter<std::string>("odom_frame", parameters_.odom_frame);
@@ -115,6 +128,8 @@ void BaseNode::LoadParameters()
 
 void BaseNode::ValidateParameters() const
 {
+  // Валидация выполняется до создания драйвера и таймеров, чтобы узел не жил
+  // даже короткое время с физически невозможной конфигурацией.
   patrolbot_utils::ValidationIssues issues;
 
   patrolbot_utils::RequirePositive("wheel_radius", parameters_.wheel_radius, &issues);
@@ -151,18 +166,24 @@ void BaseNode::ValidateParameters() const
 
 void BaseNode::CreateDriver()
 {
+  // Конфигурация драйвера собирается из параметров узла, но сам BaseNode не
+  // знает деталей конкретной транспортной реализации.
   MotorDriverConfig config;
   config.mode = parameters_.driver_mode;
   config.serial_port = parameters_.serial_port;
   config.serial_baudrate = parameters_.serial_baudrate;
   config.verbose_logging = parameters_.verbose_logging;
 
+  // В v1 используются две реализации: полностью тестовый mock и безопасная
+  // serial-заготовка под реальное железо.
   if (parameters_.driver_mode == "mock") {
     motor_driver_ = std::make_unique<MockMotorDriver>();
   } else {
     motor_driver_ = std::make_unique<SerialMotorDriver>();
   }
 
+  // Configure отвечает за валидацию внутренних параметров драйвера, а Connect —
+  // за перевод его в рабочее состояние.
   if (!motor_driver_->Configure(config)) {
     throw std::runtime_error("не удалось настроить драйвер моторов");
   }
@@ -176,11 +197,15 @@ WheelCommand BaseNode::ComputeWheelCommand(
   double linear_velocity,
   double angular_velocity) const
 {
+  // Для дифференциального привода линейная скорость корпуса раскладывается
+  // в линейные скорости левого и правого колеса относительно центра базы.
   const double left_linear =
     linear_velocity - angular_velocity * parameters_.wheel_base * 0.5;
   const double right_linear =
     linear_velocity + angular_velocity * parameters_.wheel_base * 0.5;
 
+  // Драйвер ожидает угловые скорости колёс, поэтому линейные скорости
+  // переводятся через радиус колеса.
   WheelCommand command;
   command.left_rad_per_sec = left_linear / parameters_.wheel_radius;
   command.right_rad_per_sec = right_linear / parameters_.wheel_radius;
@@ -189,6 +214,7 @@ WheelCommand BaseNode::ComputeWheelCommand(
 
 void BaseNode::CmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr message)
 {
+  // Команда ограничивается по безопасным пределам до записи в целевые поля.
   const double clamped_linear = std::clamp(
     message->linear.x,
     -parameters_.max_linear_velocity,
@@ -198,6 +224,8 @@ void BaseNode::CmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr message
     -parameters_.max_angular_velocity,
     parameters_.max_angular_velocity);
 
+  // Предупреждение выводится только при verbose-режиме, чтобы не засорять логи
+  // на каждой команде, выходящей за пределы допустимых скоростей.
   if ((clamped_linear != message->linear.x || clamped_angular != message->angular.z) &&
     parameters_.verbose_logging)
   {
@@ -216,6 +244,8 @@ void BaseNode::CmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr message
 
 void BaseNode::ControlLoop()
 {
+  // dt вычисляется по реальному времени, а не считается идеальным, чтобы
+  // интегратор оставался устойчивым даже при неравномерном вызове таймера.
   const rclcpp::Time current_time = now();
   double dt_sec = (current_time - last_control_time_).seconds();
   if (dt_sec <= 0.0) {
@@ -223,10 +253,13 @@ void BaseNode::ControlLoop()
   }
   last_control_time_ = current_time;
 
+  // По умолчанию применяется последняя целевая скорость, пришедшая из /cmd_vel.
   double linear_velocity = target_linear_velocity_;
   double angular_velocity = target_angular_velocity_;
   const auto since_last_cmd = (current_time - last_cmd_time_).nanoseconds() / 1000000;
 
+  // Watchdog защищает робот от ситуации, когда верхний уровень перестал
+  // публиковать команды, а база продолжает ехать по старому значению.
   if (since_last_cmd > parameters_.cmd_timeout_ms) {
     linear_velocity = 0.0;
     angular_velocity = 0.0;
@@ -241,6 +274,8 @@ void BaseNode::ControlLoop()
     }
   }
 
+  // После применения watchdog вычисляется команда для колёс и отправляется
+  // в драйвер на каждом такте control loop.
   const WheelCommand command = ComputeWheelCommand(linear_velocity, angular_velocity);
   if (!motor_driver_->SendWheelCommand(command)) {
     RCLCPP_ERROR(
@@ -250,11 +285,15 @@ void BaseNode::ControlLoop()
         "ошибка", "драйвер моторов не принял команду движения").c_str());
   }
 
+  // База читает текущее состояние колёс обратно из драйвера и использует его
+  // для интеграции одометрии, а не полагается только на отправленную команду.
   const WheelState wheel_state = motor_driver_->ReadState();
   const OdometryState odometry_state =
     odometry_integrator_->Step(
     wheel_state.left_rad_per_sec, wheel_state.right_rad_per_sec, dt_sec);
 
+  // Публикации собраны в конце цикла, чтобы все сообщения относились к одному
+  // и тому же измерению времени и одному состоянию платформы.
   PublishOdometry(current_time, odometry_state);
   PublishJointState(current_time, odometry_state);
   PublishDiagnostics(current_time, wheel_state);
@@ -273,6 +312,8 @@ void BaseNode::ControlLoop()
 
 void BaseNode::PublishOdometry(const rclcpp::Time & stamp, const OdometryState & state) const
 {
+  // Одометрия публикуется в том же frame_id, который использует навигационный
+  // стек. Это делает базовый узел независимым от конкретного названия фреймов.
   nav_msgs::msg::Odometry odom;
   odom.header.stamp = stamp;
   odom.header.frame_id = parameters_.odom_frame;
@@ -281,6 +322,8 @@ void BaseNode::PublishOdometry(const rclcpp::Time & stamp, const OdometryState &
   odom.pose.pose.position.y = state.y;
   odom.pose.pose.position.z = 0.0;
 
+  // Ориентация корпуса хранится как yaw, но в ROS сообщении должна быть задана
+  // полным кватернионом.
   tf2::Quaternion quaternion;
   quaternion.setRPY(0.0, 0.0, state.yaw);
   odom.pose.pose.orientation = tf2::toMsg(quaternion);
@@ -288,6 +331,8 @@ void BaseNode::PublishOdometry(const rclcpp::Time & stamp, const OdometryState &
   odom.twist.twist.angular.z = state.angular_velocity;
   odom_publisher_->publish(odom);
 
+  // TF публикуется из того же источника данных, что и /odom, чтобы не было
+  // рассогласования между сообщением и transform.
   if (parameters_.publish_tf && tf_broadcaster_ != nullptr) {
     geometry_msgs::msg::TransformStamped transform;
     transform.header.stamp = stamp;
@@ -303,6 +348,9 @@ void BaseNode::PublishOdometry(const rclcpp::Time & stamp, const OdometryState &
 
 void BaseNode::PublishJointState(const rclcpp::Time & stamp, const OdometryState & state) const
 {
+  // Скорости joint_states вычисляются из текущей скорости корпуса. Для mock и
+  // заготовочного serial-драйвера этого достаточно, чтобы дать связный поток
+  // данных в robot_state_publisher и средства визуализации.
   const WheelCommand wheel_velocity_command =
     ComputeWheelCommand(state.linear_velocity, state.angular_velocity);
 
@@ -320,6 +368,8 @@ void BaseNode::PublishDiagnostics(
   const rclcpp::Time & stamp,
   const WheelState & wheel_state) const
 {
+  // Диагностика упрощена до одного агрегированного статуса базы, но при этом
+  // содержит ключевые значения для быстрой отладки на стенде и на железе.
   diagnostic_msgs::msg::DiagnosticArray array;
   array.header.stamp = stamp;
 

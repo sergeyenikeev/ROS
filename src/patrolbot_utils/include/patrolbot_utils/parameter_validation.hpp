@@ -9,7 +9,10 @@ namespace patrolbot_utils
 
 struct ValidationIssue
 {
+  // Имя поля или параметра, в котором найдена проблема.
   std::string field;
+
+  // Короткое описание нарушения.
   std::string message;
 };
 

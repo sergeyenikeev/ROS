@@ -250,5 +250,6 @@ ros2 launch patrolbot_bringup patrol.launch.py \
 - [Runbook оператора](docs/RUNBOOK.md)
 - [Тестирование](docs/TESTING.md)
 - [Логирование](docs/LOGGING.md)
+- [Структура проекта](docs/PROJECT_STRUCTURE.md)
 - [Список функций](docs/FEATURES.md)
 - [Список багов](docs/BUGS.md)

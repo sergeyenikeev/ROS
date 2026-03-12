@@ -11,10 +11,17 @@ namespace patrolbot_base
 class SerialMotorDriver : public MotorDriver
 {
 public:
+  // Проверяет базовую корректность параметров последовательного соединения.
   bool Configure(const MotorDriverConfig & config) override;
+
+  // Переводит драйвер в логическое состояние "подключён".
   bool Connect() override;
   bool IsConnected() const override;
+
+  // Отправляет или, на текущем этапе, сохраняет целевую команду колёсам.
   bool SendWheelCommand(const WheelCommand & command) override;
+
+  // Возвращает последнее известное состояние колёс и диагностический статус.
   WheelState ReadState() override;
   void Stop() override;
   std::string Name() const override;

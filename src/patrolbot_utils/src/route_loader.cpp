@@ -19,6 +19,8 @@ constexpr double kPi = 3.14159265358979323846;
 
 std::string ReadRequiredString(const YAML::Node & node, const std::string & key)
 {
+  // Для обязательных полей ошибка формируется сразу и с точным именем ключа,
+  // чтобы оператор быстро находил проблему в YAML.
   if (!node[key]) {
     throw std::runtime_error("в YAML отсутствует обязательное поле '" + key + "'");
   }
@@ -27,6 +29,8 @@ std::string ReadRequiredString(const YAML::Node & node, const std::string & key)
 
 double ReadRequiredDouble(const YAML::Node & node, const std::string & key)
 {
+  // Отдельный helper нужен, чтобы поведение для обязательных числовых полей
+  // было одинаковым во всех частях маршрута.
   if (!node[key]) {
     throw std::runtime_error("в YAML отсутствует обязательное поле '" + key + "'");
   }
@@ -37,6 +41,7 @@ double ReadRequiredDouble(const YAML::Node & node, const std::string & key)
 
 MissionConfig LoadMissionConfig(const std::string & path)
 {
+  // Явная проверка пути позволяет выдавать понятную ошибку ещё до чтения YAML.
   if (path.empty()) {
     throw std::runtime_error("путь к YAML-файлу миссии пуст");
   }
@@ -47,11 +52,15 @@ MissionConfig LoadMissionConfig(const std::string & path)
 
   const YAML::Node root = YAML::LoadFile(path);
   const YAML::Node mission_node = root["mission"];
+  // Наличие корневой секции mission обязательно: это защищает от случайной
+  // подстановки другого YAML вместо конфигурации патруля.
   if (!mission_node) {
     throw std::runtime_error("в YAML отсутствует секция 'mission'");
   }
 
   MissionConfig mission;
+  // Общие параметры миссии читаются с разумными значениями по умолчанию, чтобы
+  // минимальный маршрут оставался компактным и удобным для правки.
   mission.name = ReadRequiredString(mission_node, "name");
   mission.frame_id = mission_node["frame_id"] ? mission_node["frame_id"].as<std::string>() : "map";
   mission.autostart = mission_node["autostart"] ? mission_node["autostart"].as<bool>() : false;
@@ -67,6 +76,7 @@ MissionConfig LoadMissionConfig(const std::string & path)
     mission_node["retry_backoff_sec"] ? mission_node["retry_backoff_sec"].as<double>() : 5.0;
 
   ValidationIssues issues;
+  // Сначала валидируются общие параметры миссии, а затем каждая точка маршрута.
   RequireNotEmpty("mission.name", mission.name, &issues);
   RequireNotEmpty("mission.frame_id", mission.frame_id, &issues);
   RequirePositive("mission.default_timeout_sec", mission.default_timeout_sec, &issues);
@@ -83,10 +93,14 @@ MissionConfig LoadMissionConfig(const std::string & path)
     for (std::size_t index = 0; index < waypoints_node.size(); ++index) {
       const YAML::Node waypoint_node = waypoints_node[index];
       WaypointConfig waypoint;
+      // Имена и координаты каждой точки обязательны, потому что именно на них
+      // завязаны постановка цели и человекочитаемые логи миссии.
       waypoint.name = ReadRequiredString(waypoint_node, "name");
       waypoint.x = ReadRequiredDouble(waypoint_node, "x");
       waypoint.y = ReadRequiredDouble(waypoint_node, "y");
       const double yaw_deg = ReadRequiredDouble(waypoint_node, "yaw_deg");
+      // В YAML угол удобнее задавать в градусах, но внутри проекта везде
+      // используется радианная мера для совместимости с tf2.
       waypoint.yaw_rad = yaw_deg * kPi / 180.0;
       waypoint.timeout_sec =
         waypoint_node["timeout_sec"] ?
@@ -95,6 +109,8 @@ MissionConfig LoadMissionConfig(const std::string & path)
       waypoint.retries =
         waypoint_node["retries"] ? waypoint_node["retries"].as<int>() : mission.default_retries;
 
+      // Валидация waypoint выполняется с указанием индекса, чтобы маршрут из
+      // десятков точек можно было быстро исправлять без лишнего поиска.
       RequireNotEmpty("waypoint[" + std::to_string(index) + "].name", waypoint.name, &issues);
       RequirePositive(
         "waypoint[" + std::to_string(index) + "].timeout_sec",
@@ -105,10 +121,14 @@ MissionConfig LoadMissionConfig(const std::string & path)
           {"waypoint[" + std::to_string(index) + "].retries", "не должно быть отрицательным"});
       }
 
+      // Даже при ошибках продолжаем разбор всего файла, чтобы вернуть полный
+      // набор проблем за один проход CI или ручной проверки.
       mission.waypoints.push_back(waypoint);
     }
   }
 
+  // Итоговый отчёт по ошибкам поднимается одним исключением, пригодным и для
+  // логов узлов, и для unit/integration тестов.
   if (HasIssues(issues)) {
     throw std::runtime_error(FormatIssues(issues));
   }

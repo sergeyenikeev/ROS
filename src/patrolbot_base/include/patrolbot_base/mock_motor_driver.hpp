@@ -10,10 +10,17 @@ namespace patrolbot_base
 class MockMotorDriver : public MotorDriver
 {
 public:
+  // Для mock-реализации конфигурация всегда принимается без реального I/O.
   bool Configure(const MotorDriverConfig & config) override;
+
+  // Помечает драйвер как подключённый.
   bool Connect() override;
   bool IsConnected() const override;
+
+  // Запоминает последнюю команду как текущее состояние тестовой базы.
   bool SendWheelCommand(const WheelCommand & command) override;
+
+  // Возвращает состояние, синтезированное из последней принятой команды.
   WheelState ReadState() override;
   void Stop() override;
   std::string Name() const override;

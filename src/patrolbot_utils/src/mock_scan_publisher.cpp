@@ -15,12 +15,17 @@
 namespace patrolbot_utils
 {
 
+// Утилитарный узел нужен для сценариев без реального LiDAR: он публикует
+// синтетический LaserScan, достаточный для smoke-тестов launch-файлов,
+// отладки SLAM и базовой проверки навигационной оркестрации.
 class MockScanPublisher : public rclcpp::Node
 {
 public:
   MockScanPublisher()
   : Node("mock_scan_publisher")
   {
+    // Параметры оставлены гибкими, чтобы один и тот же узел можно было
+    // использовать и в тестах, и в ручных demo-сценариях.
     frame_id_ = declare_parameter<std::string>("frame_id", "laser_frame");
     scan_topic_ = declare_parameter<std::string>("scan_topic", "/scan");
     publish_rate_hz_ = declare_parameter<double>("publish_rate_hz", 8.0);
@@ -32,6 +37,8 @@ public:
     default_range_ = declare_parameter<double>("default_range", 3.5);
     verbose_logging_ = declare_parameter<bool>("verbose_logging", false);
 
+    // Валидация параметров выполняется до создания таймера, чтобы узел не
+    // стартовал с физически невозможной конфигурацией лучей.
     ValidationIssues issues;
     RequireNotEmpty("frame_id", frame_id_, &issues);
     RequireNotEmpty("scan_topic", scan_topic_, &issues);
@@ -58,6 +65,7 @@ public:
       throw std::runtime_error(text);
     }
 
+    // Паблишер и таймер создаются только после успешной проверки параметров.
     publisher_ = create_publisher<sensor_msgs::msg::LaserScan>(scan_topic_, 10);
 
     const auto period = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -75,6 +83,8 @@ public:
 private:
   void PublishScan()
   {
+    // Сообщение формируется заново на каждом такте. Это проще для понимания и
+    // достаточно эффективно для тестового генератора скана.
     sensor_msgs::msg::LaserScan scan;
     scan.header.stamp = now();
     scan.header.frame_id = frame_id_;
@@ -86,6 +96,7 @@ private:
     scan.range_min = static_cast<float>(range_min_);
     scan.range_max = static_cast<float>(range_max_);
 
+    // Количество лучей вычисляется из геометрии сканирования.
     const auto beam_count = static_cast<std::size_t>(
       std::ceil((angle_max_ - angle_min_) / angle_increment_));
     scan.ranges.resize(beam_count, static_cast<float>(default_range_));
@@ -129,6 +140,8 @@ private:
 
 int main(int argc, char ** argv)
 {
+  // Отдельный main оставлен минималистичным: утилита должна быть предсказуемой
+  // и не содержать дополнительной бизнес-логики вне самого узла.
   rclcpp::init(argc, argv);
   auto node = std::make_shared<patrolbot_utils::MockScanPublisher>();
   rclcpp::spin(node);

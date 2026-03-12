@@ -7,6 +7,7 @@ namespace patrolbot_utils
 {
 
 // Собирает короткое префиксированное сообщение для единообразного логирования.
+// Используется всеми ключевыми узлами проекта, чтобы логи оставались единообразными.
 std::string MakeLogMessage(const std::string & category, const std::string & message);
 
 }  // namespace patrolbot_utils
