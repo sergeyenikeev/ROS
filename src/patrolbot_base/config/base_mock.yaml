@@ -1,0 +1,16 @@
+patrolbot_base:
+  ros__parameters:
+    wheel_radius: 0.05
+    wheel_base: 0.24
+    odom_frame: odom
+    base_frame: base_footprint
+    publish_tf: true
+    cmd_timeout_ms: 500
+    max_linear_velocity: 0.5
+    max_angular_velocity: 1.2
+    control_rate_hz: 30.0
+    driver_mode: mock
+    serial_port: /dev/ttyUSB0
+    serial_baudrate: 115200
+    verbose_logging: false
+    log_level: info

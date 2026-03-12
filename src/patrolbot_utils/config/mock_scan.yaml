@@ -1,0 +1,12 @@
+mock_scan_publisher:
+  ros__parameters:
+    frame_id: laser_frame
+    scan_topic: /scan
+    publish_rate_hz: 8.0
+    angle_min: -3.14159265359
+    angle_max: 3.14159265359
+    angle_increment: 0.01745329251
+    range_min: 0.12
+    range_max: 8.0
+    default_range: 3.5
+    verbose_logging: false
