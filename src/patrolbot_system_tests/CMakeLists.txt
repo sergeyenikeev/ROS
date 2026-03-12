@@ -23,7 +23,7 @@ install(TARGETS
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY launch test
+install(DIRECTORY test
   DESTINATION share/${PROJECT_NAME}
 )
 
