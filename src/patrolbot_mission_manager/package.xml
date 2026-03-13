@@ -8,6 +8,13 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!--
+    Mission manager зависит от:
+    - nav2_msgs и rclcpp_action для работы с NavigateToPose;
+    - patrolbot_interfaces для внешнего API;
+    - patrolbot_utils для загрузки маршрутов и общих helpers;
+    - tf2 и geometry_msgs для формирования PoseStamped целей.
+  -->
   <depend>ament_index_cpp</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_msgs</depend>

@@ -11,6 +11,8 @@ namespace
 
 std::filesystem::path WriteMissionFile(const std::string & file_name, const std::string & content)
 {
+  // В тестах YAML-файлы генерируются во временном каталоге, чтобы не зависеть
+  // от конкретного пути к workspace и не засорять репозиторий.
   const auto path = std::filesystem::temp_directory_path() / file_name;
   std::ofstream stream(path);
   stream << content;
@@ -22,6 +24,8 @@ std::filesystem::path WriteMissionFile(const std::string & file_name, const std:
 
 TEST(RouteLoaderTest, LoadsValidMissionWithDefaults)
 {
+  // Сценарий проверяет, что loader корректно применяет значения по умолчанию
+  // к waypoint, если timeout и retries не заданы явно.
   const auto path = WriteMissionFile(
     "patrolbot_valid_mission.yaml",
     R"(mission:
@@ -54,6 +58,8 @@ TEST(RouteLoaderTest, LoadsValidMissionWithDefaults)
 
 TEST(RouteLoaderTest, RejectsNegativeRetries)
 {
+  // Отрицательное число повторов является логически некорректным, и loader
+  // обязан завершиться исключением, а не принимать такой маршрут.
   const auto path = WriteMissionFile(
     "patrolbot_invalid_mission.yaml",
     R"(mission:

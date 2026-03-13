@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Скрипт проверяет форматирование C++ файлов через clang-format в режиме без изменений.
+# Скрипт проверяет форматирование C++ файлов через clang-format в режиме dry-run.
+# Он не меняет файлы, а только валит запуск при несоответствии стилю.
 WORKSPACE_DIR="/home/ubuntu/ROS"
 
 cd "${WORKSPACE_DIR}"
@@ -11,6 +12,8 @@ if ! command -v clang-format >/dev/null 2>&1; then
   exit 1
 fi
 
+# Проверяем только исходники C/C++, потому что для launch, YAML и XML в проекте
+# пока не настроен отдельный formatter с жёстким стилем.
 find "${WORKSPACE_DIR}/src" \
   -type f \
   \( -name "*.hpp" -o -name "*.cpp" -o -name "*.h" -o -name "*.cxx" \) \

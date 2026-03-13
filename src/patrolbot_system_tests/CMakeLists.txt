@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(patrolbot_system_tests)
 
+# Пакет системных тестов отделён от production-кода, чтобы можно было держать
+# в нём тестовые executable и launch-сценарии, не загрязняя боевые пакеты.
 find_package(ament_cmake REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 
+# Mock Nav2 action server нужен только интеграционным тестам mission manager.
 add_executable(mock_nav2_action_server
   src/mock_nav2_action_server.cpp
 )
@@ -23,11 +26,15 @@ install(TARGETS
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
+# Каталог test устанавливается, потому что launch_testing читает тестовые YAML
+# и сами launch-тесты как ресурсы пакета.
 install(DIRECTORY test
   DESTINATION share/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
+  # В этом блоке регистрируются smoke- и integration-тесты, которые проверяют
+  # оркестрацию запуска и прикладную логику patrol поверх mock-среды.
   find_package(launch_testing_ament_cmake REQUIRED)
 
   add_launch_test(test/test_mock_bringup_launch.py)

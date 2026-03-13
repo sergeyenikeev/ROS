@@ -4,6 +4,8 @@
 
 TEST(ParameterValidationTest, PositiveCheckAddsIssuesForInvalidValues)
 {
+  // Сценарий проверяет, что валидатор не "молча" пропускает нулевые и
+  // отрицательные значения для критичных параметров.
   patrolbot_utils::ValidationIssues issues;
   patrolbot_utils::RequirePositive("wheel_radius", 0.0, &issues);
   patrolbot_utils::RequirePositive("cmd_timeout_ms", -1, &issues);
@@ -15,6 +17,8 @@ TEST(ParameterValidationTest, PositiveCheckAddsIssuesForInvalidValues)
 
 TEST(ParameterValidationTest, NonNegativeAndNotEmptyPassOnValidData)
 {
+  // Второй тест подтверждает обратное поведение: корректные значения не
+  // должны создавать ложные ошибки в отчёте валидации.
   patrolbot_utils::ValidationIssues issues;
   patrolbot_utils::RequireNonNegative("timeout", 0.0, &issues);
   patrolbot_utils::RequireNotEmpty("driver_mode", "mock", &issues);

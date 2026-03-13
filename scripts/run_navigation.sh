@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Скрипт запускает Nav2 поверх сохранённой карты.
+# Скрипт запускает Nav2 поверх уже известной карты.
+# Параметры совпадают с run_localization.sh, чтобы оператору было проще.
 WORKSPACE_DIR="/home/ubuntu/ROS"
 MAP_FILE="${1:-/home/ubuntu/ROS/maps/patrolbot_map.yaml}"
 USE_MOCK_HARDWARE="${2:-false}"

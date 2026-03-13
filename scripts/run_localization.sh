@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Скрипт запускает локализацию PatrolBot на сохранённой карте.
+# Скрипт запускает локализацию PatrolBot на уже сохранённой карте.
+# Параметры:
+#   $1 - путь к YAML карты;
+#   $2 - использовать ли mock-аппаратуру;
+#   $3 - уровень логирования.
 WORKSPACE_DIR="/home/ubuntu/ROS"
 MAP_FILE="${1:-/home/ubuntu/ROS/maps/patrolbot_map.yaml}"
 USE_MOCK_HARDWARE="${2:-false}"
 LOG_LEVEL="${3:-info}"
 
+# Явная проверка карты даёт оператору понятную ошибку до старта launch.
 if [[ ! -f "${MAP_FILE}" ]]; then
   echo "[ERROR] Файл карты не найден: ${MAP_FILE}"
   exit 1

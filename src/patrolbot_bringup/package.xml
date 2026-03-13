@@ -6,8 +6,13 @@
   <maintainer email="codex@example.com">Codex</maintainer>
   <license>MIT</license>
 
+  <!-- Пакет не компилирует код, но всё равно использует ament_cmake для install launch-файлов. -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!--
+    Bringup зависит от всех runtime-подсистем, которые может включать в профили:
+    базовая платформа, описание робота, навигация, SLAM, mission manager и mock-утилиты.
+  -->
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>nav2_amcl</exec_depend>

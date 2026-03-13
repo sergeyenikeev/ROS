@@ -8,6 +8,10 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!--
+    Utils обслуживает сразу несколько пакетов, поэтому здесь лежат только
+    действительно общие зависимости без прикладной логики mission manager или базы.
+  -->
   <depend>diagnostic_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>

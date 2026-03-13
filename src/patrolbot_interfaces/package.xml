@@ -6,13 +6,17 @@
   <maintainer email="codex@example.com">Codex</maintainer>
   <license>MIT</license>
 
+  <!-- Интерфейсный пакет требует генераторы rosidl на этапе сборки. -->
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
 
+  <!-- builtin_interfaces нужен для поля времени в PatrolStatus.msg. -->
   <depend>builtin_interfaces</depend>
 
+  <!-- Runtime-инфраструктура сгенерированных интерфейсов нужна соседним пакетам. -->
   <exec_depend>rosidl_default_runtime</exec_depend>
 
+  <!-- Этот маркер обязателен для interface-пакетов ROS 2. -->
   <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>

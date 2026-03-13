@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(patrolbot_mission_manager)
 
+# Mission manager — отдельный прикладной слой, стоящий поверх Nav2.
+# Как и в базе, логика разбивается на библиотеку и минимальный executable.
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -13,6 +15,8 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 
+# В библиотеке лежат и ROS-обвязка mission manager, и чистая state machine.
+# Это позволяет тестировать автомат независимо от main.cpp.
 add_library(${PROJECT_NAME}_lib
   src/mission_manager_node.cpp
   src/mission_state_machine.cpp
@@ -57,6 +61,8 @@ ament_target_dependencies(patrolbot_mission_manager_node
   tf2_geometry_msgs
 )
 
+# Устанавливаем и библиотеку, и узел, и YAML-миссии, чтобы запускаться как из
+# исходников, так и из install-space на Raspberry Pi.
 install(TARGETS
   ${PROJECT_NAME}_lib
   patrolbot_mission_manager_node
@@ -89,6 +95,8 @@ ament_export_dependencies(
 )
 
 if(BUILD_TESTING)
+  # Здесь проверяется чистая прикладная логика конечного автомата миссии.
+  # Для этого достаточно unit-тестов на gtest без подъёма полноценного Nav2.
   find_package(ament_cmake_gtest REQUIRED)
 
   ament_add_gtest(test_mission_state_machine

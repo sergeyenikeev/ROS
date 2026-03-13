@@ -8,6 +8,10 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!--
+    Runtime-зависимости тестового пакета — это то, что нужно его mock-узлам и
+    integration-сценариям во время исполнения.
+  -->
   <depend>nav2_msgs</depend>
   <depend>patrolbot_bringup</depend>
   <depend>patrolbot_interfaces</depend>
@@ -15,6 +19,10 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
 
+  <!--
+    Эти зависимости нужны только для Python/launch тестов и не требуются
+    production-профилям PatrolBot.
+  -->
   <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>launch_testing</test_depend>
   <test_depend>launch_testing_ament_cmake</test_depend>

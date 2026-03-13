@@ -1,3 +1,6 @@
+# Минимальный RViz-профиль PatrolBot.
+# Профиль intentionally простой: сетка, модель робота и TF. Этого достаточно
+# для базовой проверки, что URDF, joint_states и дерево трансформаций согласованы.
 Panels:
   - Class: rviz_common/Displays
     Name: Displays
@@ -19,5 +22,6 @@ Visualization Manager:
       Name: TF
       Enabled: true
   Global Options:
+    # base_link выбран как стартовый fixed frame для первичной диагностики модели.
     Fixed Frame: base_link
   Name: root

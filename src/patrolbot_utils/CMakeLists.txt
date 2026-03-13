@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(patrolbot_utils)
 
+# Utils-пакет собирает общие переиспользуемые компоненты: логирование,
+# диагностику, валидацию параметров, загрузку маршрутов и mock LiDAR.
 find_package(ament_cmake REQUIRED)
 find_package(diagnostic_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -8,6 +10,8 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
+# Основные утилиты вынесены в библиотеку, чтобы их могли использовать и runtime
+# пакеты, и unit-тесты, и отдельные вспомогательные исполняемые файлы.
 add_library(${PROJECT_NAME}
   src/diagnostic_helper.cpp
   src/logging_utils.cpp
@@ -29,6 +33,7 @@ ament_target_dependencies(${PROJECT_NAME}
 )
 target_link_libraries(${PROJECT_NAME} yaml-cpp)
 
+# Mock-сканер собирается как отдельный узел, но переиспользует общие utils.
 add_executable(mock_scan_publisher
   src/mock_scan_publisher.cpp
 )
@@ -49,6 +54,7 @@ install(TARGETS
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
+# Заголовки и конфиг mock LiDAR должны быть доступны остальным пакетам и launch.
 install(DIRECTORY include
   DESTINATION include
 )
@@ -57,11 +63,14 @@ install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Экспортируем библиотеку и зависимости, чтобы соседние пакеты могли линковаться
+# с utils без ручного повторения зависимостей.
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(diagnostic_msgs geometry_msgs rclcpp sensor_msgs yaml_cpp_vendor)
 
 if(BUILD_TESTING)
+  # Здесь проверяется чистая логика утилит: валидация параметров и загрузка YAML.
   find_package(ament_cmake_gtest REQUIRED)
 
   ament_add_gtest(test_parameter_validation

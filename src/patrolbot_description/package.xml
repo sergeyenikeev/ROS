@@ -6,8 +6,13 @@
   <maintainer email="codex@example.com">Codex</maintainer>
   <license>MIT</license>
 
+  <!-- Пакет содержит ресурсы описания робота и не требует отдельного C++ toolchain. -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!--
+    Runtime-зависимости нужны для разворачивания Xacro и публикации TF-модели
+    через robot_state_publisher.
+  -->
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>

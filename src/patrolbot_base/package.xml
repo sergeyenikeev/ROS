@@ -6,8 +6,15 @@
   <maintainer email="codex@example.com">Codex</maintainer>
   <license>MIT</license>
 
+  <!-- ament_cmake используется как единый build-system для всех C++ пакетов проекта. -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!--
+    Runtime-зависимости базы:
+    - сообщения движения, одометрии и диагностики;
+    - tf2 для публикации трансформаций;
+    - patrolbot_utils для логирования и общих helper-функций.
+  -->
   <depend>diagnostic_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
@@ -19,11 +26,13 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
 
+  <!-- Линтеры и gtest нужны только в тестовом режиме сборки. -->
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
+    <!-- Явно фиксируем, что пакет собирается через ament_cmake. -->
     <build_type>ament_cmake</build_type>
   </export>
 </package>

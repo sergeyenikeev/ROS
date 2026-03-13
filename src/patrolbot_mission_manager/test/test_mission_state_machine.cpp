@@ -7,6 +7,8 @@ namespace
 
 patrolbot_utils::MissionConfig MakeMission()
 {
+  // Общая тестовая миссия используется как компактная заготовка для всех
+  // сценариев переходов конечного автомата.
   patrolbot_utils::MissionConfig mission;
   mission.name = "test_patrol";
   mission.frame_id = "map";
@@ -24,6 +26,8 @@ patrolbot_utils::MissionConfig MakeMission()
 
 TEST(MissionStateMachineTest, WaitsForNav2AndDispatchesWhenServerAppears)
 {
+  // Если Nav2 недоступен в момент активации, автомат должен перейти в ожидание,
+  // а после сигнала готовности — выдать команду на отправку первой цели.
   patrolbot_mission_manager::MissionStateMachine machine;
   auto decision = machine.ActivateMission(MakeMission(), false);
 
@@ -37,6 +41,8 @@ TEST(MissionStateMachineTest, WaitsForNav2AndDispatchesWhenServerAppears)
 
 TEST(MissionStateMachineTest, SchedulesRetryBeforeFinalSuccess)
 {
+  // Этот тест проверяет ключевую ветку PatrolBot: точка временно не проходится,
+  // автомат планирует повтор, а затем возвращается в навигацию.
   patrolbot_mission_manager::MissionStateMachine machine;
   machine.ActivateMission(MakeMission(), true);
 
@@ -52,6 +58,8 @@ TEST(MissionStateMachineTest, SchedulesRetryBeforeFinalSuccess)
 
 TEST(MissionStateMachineTest, FailureWithoutContinueOnErrorStopsMission)
 {
+  // Если continue_on_error выключен и повторов больше нет, миссия обязана
+  // завершиться фатальной ошибкой, а не переходить к следующей точке.
   patrolbot_mission_manager::MissionStateMachine machine;
   auto mission = MakeMission();
   mission.waypoints.front().retries = 0;
@@ -66,6 +74,8 @@ TEST(MissionStateMachineTest, FailureWithoutContinueOnErrorStopsMission)
 
 TEST(MissionStateMachineTest, ContinueOnErrorMovesToNextWaypoint)
 {
+  // В альтернативной политике continue_on_error ошибка фиксируется в статистике,
+  // но выполнение маршрута продолжается со следующей точки.
   patrolbot_mission_manager::MissionStateMachine machine;
   auto mission = MakeMission();
   mission.continue_on_error = true;

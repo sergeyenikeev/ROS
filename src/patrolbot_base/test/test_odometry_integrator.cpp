@@ -4,6 +4,8 @@
 
 TEST(OdometryIntegratorTest, StraightMotionIntegratesForwardDistance)
 {
+  // Этот тест проверяет базовый сценарий: оба колеса вращаются одинаково,
+  // значит робот должен ехать строго вперёд без бокового смещения и поворота.
   patrolbot_base::OdometryIntegrator integrator(0.05, 0.24);
 
   const auto state = integrator.Step(10.0, 10.0, 1.0);
@@ -17,6 +19,8 @@ TEST(OdometryIntegratorTest, StraightMotionIntegratesForwardDistance)
 
 TEST(OdometryIntegratorTest, OppositeWheelVelocitiesRotateRobot)
 {
+  // Здесь проверяется разворот на месте: колёса вращаются в разные стороны,
+  // поэтому линейная скорость корпуса должна быть нулевой, а угловая — ненулевой.
   patrolbot_base::OdometryIntegrator integrator(0.05, 0.24);
 
   const auto state = integrator.Step(-10.0, 10.0, 1.0);

@@ -6,8 +6,13 @@
   <maintainer email="codex@example.com">Codex</maintainer>
   <license>MIT</license>
 
+  <!-- Пакет хранит параметры и карты, а не собственный исполняемый код. -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!--
+    Exec-зависимости описывают состав навигационного стека, для которого
+    предназначены конфиги этого пакета.
+  -->
   <exec_depend>nav2_bt_navigator</exec_depend>
   <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>nav2_controller</exec_depend>
