@@ -1,13 +1,18 @@
 mission:
+  # Минимальная миссия для проверки штатного завершения без повторов и ошибок.
   name: patrol_success
   frame_id: map
   autostart: false
   loop_forever: false
   continue_on_error: false
+
+  # Короткие таймауты делают тест быстрым, но всё ещё достаточно реалистичным.
   default_timeout_sec: 5.0
   default_retries: 0
   retry_backoff_sec: 1.0
+
   waypoints:
+    # Две простые точки достаточно, чтобы проверить последовательную отправку целей.
     - name: wp1
       x: 0.0
       y: 0.0

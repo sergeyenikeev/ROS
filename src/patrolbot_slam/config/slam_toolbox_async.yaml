@@ -1,30 +1,59 @@
 slam_toolbox:
   ros__parameters:
+    # Simulated time должен быть согласован со всем остальным launch-профилем.
     use_sim_time: false
+
+    # PatrolBot использует этот конфиг именно для построения карты, а не для
+    # локализации на уже сохранённой карте.
     slam_mode: mapping
     map_file_name: /home/ubuntu/ROS/maps/patrolbot_map
     mode: mapping
+
+    # Базовые фреймы и топики должны совпадать с тем, что публикуют база и LiDAR.
     odom_frame: odom
     map_frame: map
     base_frame: base_footprint
     scan_topic: /scan
+
+    # Разрешение 5 см — типичный разумный компромисс между качеством карты и
+    # нагрузкой на Raspberry Pi.
     resolution: 0.05
     max_laser_range: 8.0
+
+    # Минимальный интервал между обработками сканов. Если сделать слишком малым,
+    # слабый CPU будет тратить больше времени на SLAM, чем на всё остальное.
     minimum_time_interval: 0.3
+
+    # Как часто публиковать map -> odom и как часто обновлять саму карту.
     transform_publish_period: 0.05
     map_update_interval: 2.0
+
+    # Интерактивный режим редактора карты для PatrolBot не нужен.
     enable_interactive_mode: false
+
+    # Scan matching включён, потому что он заметно повышает качество SLAM
+    # на небольшом indoor-роботе с дифференциальной одометрией.
     use_scan_matching: true
     use_scan_barycenter: true
+
+    # Порог движения до очередного meaningful update. Слишком маленькие значения
+    # увеличивают шум и нагрузку, слишком большие ухудшают детализацию.
     minimum_travel_distance: 0.10
     minimum_travel_heading: 0.10
+
+    # Параметры loop closure. Они заданы как осторожная стартовая конфигурация
+    # и должны подтверждаться на реальном помещении.
     loop_search_maximum_distance: 5.0
     loop_match_minimum_chain_size: 8
     loop_match_maximum_variance_coarse: 3.0
     loop_match_minimum_response_coarse: 0.35
     loop_match_minimum_response_fine: 0.45
+
+    # Параметры корреляционного поиска влияют на устойчивость scan matching.
     correlation_search_space_dimension: 0.5
     correlation_search_space_resolution: 0.01
     correlation_search_space_smear_deviation: 0.1
+
+    # Штрафы помогают подавлять слишком агрессивные скачки позы между сканами.
     distance_variance_penalty: 0.5
     angle_variance_penalty: 1.0

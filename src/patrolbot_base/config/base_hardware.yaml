@@ -1,16 +1,33 @@
 patrolbot_base:
   ros__parameters:
+    # Геометрия платформы должна точно совпадать с реальным шасси и URDF.
     wheel_radius: 0.05
     wheel_base: 0.24
+
+    # Фреймы используются всеми верхними слоями: AMCL, Nav2, mission manager и RViz.
     odom_frame: odom
     base_frame: base_footprint
+
+    # Для реального стенда TF odom -> base_footprint обычно публикуется именно базой.
     publish_tf: true
+
+    # Watchdog по потере команд особенно важен на железе, чтобы робот не продолжал
+    # движение после остановки верхнего уровня.
     cmd_timeout_ms: 500
+
+    # Эти ограничения стоит калибровать под реальную механику, массу и сцепление.
     max_linear_velocity: 0.5
     max_angular_velocity: 1.2
     control_rate_hz: 30.0
+
+    # В hardware-конфигурации выбирается serial-заготовка драйвера.
     driver_mode: serial
+
+    # Путь к порту и baudrate нужно сверять с реальным моторным контроллером.
     serial_port: /dev/ttyUSB0
     serial_baudrate: 115200
+
+    # На железе verbose_logging полезнее, потому что позволяет быстрее понять,
+    # что происходит при сбоях связи и потере команд.
     verbose_logging: true
     log_level: info

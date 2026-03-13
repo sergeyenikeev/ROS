@@ -1,12 +1,17 @@
 mission:
+  # Миссия специально минимальна, потому что тестирует не маршрут как таковой,
+  # а логику повтора после первой ошибки.
   name: patrol_retry
   frame_id: map
   autostart: false
   loop_forever: false
   continue_on_error: false
   default_timeout_sec: 5.0
+
+  # Один дополнительный retry позволяет смоделировать сценарий "ошибка, затем успех".
   default_retries: 1
   retry_backoff_sec: 0.5
+
   waypoints:
     - name: wp1
       x: 0.0

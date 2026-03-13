@@ -1,36 +1,57 @@
 amcl:
   ros__parameters:
+    # Simulated time должен совпадать с остальными узлами профиля localization.
     use_sim_time: false
+
+    # Параметры альфа описывают шум модели движения. Для дифференциальной базы
+    # это стартовая конфигурация, которую нужно калибровать на железе.
     alpha1: 0.2
     alpha2: 0.2
     alpha3: 0.2
     alpha4: 0.2
     alpha5: 0.1
+
+    # Имена фреймов должны совпадать с URDF и базовой платформой.
     base_frame_id: base_footprint
+    global_frame_id: map
+    odom_frame_id: odom
+
+    # Beam skip помогает переживать плохие лучи и частичные выбросы сканера.
     beam_skip_distance: 0.5
     beam_skip_error_threshold: 0.9
     beam_skip_threshold: 0.3
     do_beamskip: true
-    global_frame_id: map
+
+    # Параметры модели лазера ориентированы на indoor LiDAR средней дальности.
     lambda_short: 0.1
     laser_likelihood_max_dist: 2.0
     laser_max_range: 8.0
     laser_min_range: 0.12
     laser_model_type: likelihood_field
     max_beams: 60
+
+    # Количество частиц выбрано с запасом для небольших помещений, но без
+    # чрезмерной нагрузки на Raspberry Pi.
     max_particles: 2000
     min_particles: 500
-    odom_frame_id: odom
+
+    # Настройки фильтра частиц: компромисс между устойчивостью и скоростью реакции.
     pf_err: 0.05
     pf_z: 0.99
     recovery_alpha_fast: 0.0
     recovery_alpha_slow: 0.0
     resample_interval: 1
+
+    # PatrolBot использует дифференциальную модель движения.
     robot_model_type: nav2_amcl::DifferentialMotionModel
+
+    # Частота сохранения позы и публикации TF.
     save_pose_rate: 0.5
-    sigma_hit: 0.2
     tf_broadcast: true
     transform_tolerance: 1.0
+
+    # Параметры распределения попаданий и пропусков лазера.
+    sigma_hit: 0.2
     update_min_a: 0.1
     update_min_d: 0.1
     z_hit: 0.8

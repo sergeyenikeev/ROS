@@ -542,9 +542,10 @@
 - `patrolbot_description/urdf/patrolbot.urdf.xacro`
 - `patrolbot_system_tests/src/mock_nav2_action_server.cpp`
 - ключевые launch-тесты из `patrolbot_system_tests/test`
+- YAML-конфиги в `patrolbot_base/config`, `patrolbot_utils/config`, `patrolbot_slam/config`,
+  `patrolbot_navigation/config`, `patrolbot_mission_manager/config` и `patrolbot_system_tests/test`
 
 Следующим этапом логично расширять комментарии на:
 
-- оставшиеся тестовые файлы и тестовые YAML-миссии;
-- конфиги `Nav2`, `AMCL`, `slam_toolbox` и base-параметры;
+- оставшиеся второстепенные тестовые файлы и карты;
 - дополнительные документы и операторские сценарии, если потребуется ещё более подробная поясняющая документация.
